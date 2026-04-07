@@ -196,6 +196,7 @@
         }
 
         function sleep() {
+            if (!happy) return;
             awake = false;
             clearTimeout(lookTimer);
             lookTimer = null;
