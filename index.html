@@ -5,26 +5,18 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        html, body {
-            width: 100%;
-            height: 100%;
-        }
-
         body {
             background: black;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+            display: flex;
+            align-items: center;
+            width: 100vw;
+            height: 100vh;
             overflow: hidden;
         }
 
         .eye {
-            width: 100%;
-            aspect-ratio: 1;
-            align-self: center;
-            justify-self: center;
-            /* cap so circles don't exceed the viewport height */
-            max-width: 100vh;
-            max-height: 100vw;
+            width: 50vw;
+            height: 50vw;
             background: white;
             border-radius: 50%;
             position: relative;
