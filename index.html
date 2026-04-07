@@ -204,8 +204,8 @@
         let lastBeta = null;
         let lastGamma = null;
 
-        // Voice selection
-        let selectedVoice = null;
+        // Voice selection — store by name so the reference survives voiceschanged
+        let selectedVoiceName = 'Google UK English Female';
         let voiceRate = 0.9;
         let voicePitch = 1.0;
         const voicePanel = document.getElementById('voice-panel');
@@ -225,32 +225,48 @@
             pitchVal.textContent = voicePitch.toFixed(2);
         });
 
+        function getVoice() {
+            // Re-fetch every time — voice objects can go stale on Android
+            return speechSynthesis.getVoices().find(v => v.name === selectedVoiceName) ?? null;
+        }
+
         function makeUtterance(text) {
             const u = new SpeechSynthesisUtterance(text);
-            if (selectedVoice) u.voice = selectedVoice;
+            const voice = getVoice();
+            if (voice) {
+                u.voice = voice;
+                u.lang = voice.lang; // helps Android route to the correct accent engine
+            }
             u.rate = voiceRate;
             u.pitch = voicePitch;
             return u;
         }
 
+        function speak(text) {
+            // cancel + small delay works around Android Chrome ignoring voice in timers
+            speechSynthesis.cancel();
+            setTimeout(() => speechSynthesis.speak(makeUtterance(text)), 50);
+        }
+
         function buildVoiceList() {
             const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
             if (!voices.length) return;
-            if (!selectedVoice) {
-                selectedVoice = voices.find(v => v.name === 'Google UK English Female') ?? null;
+            if (!selectedVoiceName) {
+                const def = voices.find(v => v.name === 'Google UK English Female');
+                if (def) selectedVoiceName = def.name;
             }
             voiceList.innerHTML = '';
             voices.forEach(v => {
                 const el = document.createElement('div');
-                el.className = 'voice-item' + (v === selectedVoice ? ' selected' : '');
+                el.className = 'voice-item' + (v.name === selectedVoiceName ? ' selected' : '');
                 const network = !v.localService ? '<span class="network">network</span>' : '';
                 el.innerHTML = `${v.name}${network}<div class="lang">${v.lang}</div>`;
                 el.addEventListener('click', () => {
-                    selectedVoice = v;
+                    selectedVoiceName = v.name;
                     voicePanel.classList.remove('open');
                     document.querySelectorAll('.voice-item').forEach(e => e.classList.remove('selected'));
                     el.classList.add('selected');
-                    speechSynthesis.speak(makeUtterance(pickNagLine()));
+                    speak(pickNagLine());
                 });
                 voiceList.appendChild(el);
             });
@@ -366,7 +382,7 @@
         function startNagging() {
             if (nagTimer) return;
             nagTimer = setInterval(() => {
-                speechSynthesis.speak(makeUtterance(pickNagLine()));
+                speak(pickNagLine());
             }, 20000);
         }
 
