@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tilt Bot</title>
+    <style>
+        body { display: flex; justify-content: center; align-items: center; height: 100vh; font-size: 100px; transition: background 0.3s; }
+    </style>
+</head>
+<body>
+    <div id="face">🙂</div>
+    <audio id="sadSound" src="your-sound-file.mp3"></audio>
+
+    <script>
+        const face = document.getElementById('face');
+        const sound = document.getElementById('sadSound');
+
+        window.addEventListener('deviceorientation', (event) => {
+            // "beta" is the front-to-back tilt in degrees
+            // "gamma" is the left-to-right tilt
+            if (Math.abs(event.beta) > 30 || Math.abs(event.gamma) > 30) {
+                face.innerHTML = "☹️";
+                document.body.style.backgroundColor = "red";
+                sound.play();
+            } else {
+                face.innerHTML = "🙂";
+                document.body.style.backgroundColor = "white";
+            }
+        });
+    </script>
+</body>
+</html>
