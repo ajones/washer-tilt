@@ -71,28 +71,6 @@
             cursor: pointer;
         }
 
-        #threshold-ui {
-            position: fixed;
-            bottom: 36px;
-            left: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 4px;
-            pointer-events: none;
-        }
-
-        #threshold-label {
-            color: #aaa;
-            font-family: monospace;
-            font-size: 13px;
-        }
-
-        #threshold-slider {
-            pointer-events: all;
-            width: 140px;
-            accent-color: #aaa;
-        }
 
         #voice-btn {
             position: fixed;
@@ -184,12 +162,7 @@
         </div>
         <div id="voice-list"></div>
     </div>
-    <div id="debug" style="position:fixed;bottom:10px;left:10px;color:#fff;font-family:monospace;font-size:13px;pointer-events:none;"></div>
     <div id="build" style="position:fixed;top:10px;right:10px;color:#333;font-family:monospace;font-size:12px;pointer-events:none;"></div>
-    <div id="threshold-ui">
-        <div id="threshold-label">±15°</div>
-        <input id="threshold-slider" type="range" min="1" max="45" value="3">
-    </div>
 
     <script>
         const leftEye = document.getElementById('leftEye');
@@ -242,7 +215,15 @@
             return u;
         }
 
+        function isQuietHours() {
+            const hour = Number(new Intl.DateTimeFormat('en-US', {
+                hour: 'numeric', hour12: false, timeZone: 'America/Los_Angeles'
+            }).format(new Date()));
+            return hour >= 21 || hour < 7;
+        }
+
         function speak(text) {
+            if (isQuietHours()) return;
             // cancel + small delay works around Android Chrome ignoring voice in timers
             speechSynthesis.cancel();
             setTimeout(() => speechSynthesis.speak(makeUtterance(text)), 50);
@@ -280,16 +261,7 @@
             voicePanel.classList.toggle('open');
         });
 
-        let threshold = 3;
-
-        const thresholdSlider = document.getElementById('threshold-slider');
-        const thresholdLabel = document.getElementById('threshold-label');
-        thresholdSlider.value = threshold;
-        thresholdLabel.textContent = `±${threshold}°`;
-        thresholdSlider.addEventListener('input', () => {
-            threshold = Number(thresholdSlider.value);
-            thresholdLabel.textContent = `±${threshold}°`;
-        });
+        const threshold = 1.5;
 
         function isVertical(beta) {
             // Angular distance from 90° (upright), accounting for 360° wrap
@@ -442,15 +414,7 @@
             stopNagging();
         }
 
-        const debug = document.getElementById('debug');
-        let eventCount = 0;
-
         function handleOrientation(event) {
-            eventCount++;
-            const fromVertical = event.beta != null
-                ? Math.abs(((event.beta - 90 + 540) % 360) - 180).toFixed(1)
-                : '?';
-            debug.textContent = `β:${event.beta?.toFixed(1)} γ:${event.gamma?.toFixed(1)} Δvert:${fromVertical}° awake:${awake}`;
             if (event.beta === null || event.gamma === null) return;
             if (lastBeta === null) {
                 lastBeta = event.beta;
@@ -479,17 +443,13 @@
 
         // Fullscreen on tap anywhere outside the controls
         document.addEventListener('click', (e) => {
-            if (!document.fullscreenElement && !e.target.closest('#threshold-ui, #voice-btn, #voice-panel')) {
+            if (!document.fullscreenElement && !e.target.closest('#voice-btn, #voice-panel')) {
                 document.documentElement.requestFullscreen?.().catch(() => {});
             }
         });
 
         // Burn-in prevention: drift static overlays by a few px every 30s
-        const burnInEls = [
-            document.getElementById('debug'),
-            document.getElementById('build'),
-            document.getElementById('threshold-ui'),
-        ];
+        const burnInEls = [document.getElementById('build'), document.getElementById('voice-btn')];
         setInterval(() => {
             burnInEls.forEach(el => {
                 const x = (Math.random() * 6 - 3).toFixed(1);
