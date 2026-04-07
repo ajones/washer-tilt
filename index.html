@@ -83,7 +83,7 @@
     <div id="build" style="position:fixed;top:10px;right:10px;color:#333;font-family:monospace;font-size:12px;pointer-events:none;"></div>
     <div id="threshold-ui">
         <div id="threshold-label">±15°</div>
-        <input id="threshold-slider" type="range" min="1" max="45" value="15">
+        <input id="threshold-slider" type="range" min="1" max="45" value="3">
     </div>
 
     <script>
@@ -99,10 +99,12 @@
         let lastBeta = null;
         let lastGamma = null;
 
-        let threshold = 15;
+        let threshold = 3;
 
         const thresholdSlider = document.getElementById('threshold-slider');
         const thresholdLabel = document.getElementById('threshold-label');
+        thresholdSlider.value = threshold;
+        thresholdLabel.textContent = `±${threshold}°`;
         thresholdSlider.addEventListener('input', () => {
             threshold = Number(thresholdSlider.value);
             thresholdLabel.textContent = `±${threshold}°`;
