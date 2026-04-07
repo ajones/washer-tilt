@@ -46,7 +46,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            color: #444;
+            color: #aaa;
             font-family: sans-serif;
             font-size: 18px;
             cursor: pointer;
@@ -141,6 +141,7 @@
         }
 
         function handleOrientation(event) {
+            if (event.beta === null || event.gamma === null) return;
             if (lastBeta === null) {
                 lastBeta = event.beta;
                 lastGamma = event.gamma;
@@ -151,18 +152,26 @@
             lastBeta = event.beta;
             lastGamma = event.gamma;
 
-            if (db > 1 || dg > 1) wakeUp(event.beta);
+            if (db > 0.5 || dg > 0.5) wakeUp(event.beta);
             if (awake) setMood(isVertical(event.beta));
         }
 
-        document.getElementById('start').addEventListener('click', async () => {
-            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-                const permission = await DeviceOrientationEvent.requestPermission();
-                if (permission !== 'granted') return;
-            }
+        function startListening() {
             window.addEventListener('deviceorientation', handleOrientation);
-            document.getElementById('start').remove();
-        });
+            const el = document.getElementById('start');
+            if (el) el.remove();
+        }
+
+        // iOS 13+ requires explicit permission via user gesture
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+            document.getElementById('start').addEventListener('click', async () => {
+                const permission = await DeviceOrientationEvent.requestPermission();
+                if (permission === 'granted') startListening();
+            });
+        } else {
+            // Android / desktop — no permission needed, start immediately
+            startListening();
+        }
     </script>
 </body>
 </html>
