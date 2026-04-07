@@ -140,19 +140,37 @@
             }, 400 + Math.random() * 1200);
         }
 
+        let nagTimer = null;
+
+        function startNagging() {
+            if (nagTimer) return;
+            nagTimer = setInterval(() => {
+                const u = new SpeechSynthesisUtterance('close me');
+                speechSynthesis.speak(u);
+            }, 20000);
+        }
+
+        function stopNagging() {
+            clearInterval(nagTimer);
+            nagTimer = null;
+            speechSynthesis.cancel();
+        }
+
         function setMood(vertical) {
             if (vertical === happy) return;
             happy = vertical;
             if (happy) {
                 leftEye.classList.remove('unhappy');
                 rightEye.classList.remove('unhappy');
+                stopNagging();
                 scheduleLook();
             } else {
                 clearTimeout(lookTimer);
                 lookTimer = null;
                 leftEye.classList.add('unhappy');
                 rightEye.classList.add('unhappy');
-                setPupils(0, pupilMax()); // look down
+                setPupils(0, pupilMax());
+                startNagging();
             }
         }
 
@@ -171,6 +189,7 @@
                 } else {
                     leftEye.classList.add('unhappy');
                     rightEye.classList.add('unhappy');
+                    startNagging();
                 }
             }
             sleepTimer = setTimeout(sleep, 1000 + Math.random() * 9000);
@@ -183,6 +202,7 @@
             setPupils(0, 0);
             leftEye.classList.remove('open', 'unhappy');
             rightEye.classList.remove('open', 'unhappy');
+            stopNagging();
         }
 
         const debug = document.getElementById('debug');
