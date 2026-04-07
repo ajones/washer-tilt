@@ -57,6 +57,7 @@
     <div class="eye" id="leftEye"><div class="pupil" id="leftPupil"></div></div>
     <div class="eye" id="rightEye"><div class="pupil" id="rightPupil"></div></div>
     <div id="start">tap to start</div>
+    <div id="debug" style="position:fixed;bottom:10px;left:10px;color:#fff;font-family:monospace;font-size:13px;pointer-events:none;"></div>
 
     <script>
         const leftEye = document.getElementById('leftEye');
@@ -140,7 +141,12 @@
             rightEye.classList.remove('open', 'unhappy');
         }
 
+        const debug = document.getElementById('debug');
+        let eventCount = 0;
+
         function handleOrientation(event) {
+            eventCount++;
+            debug.textContent = `events:${eventCount} β:${event.beta?.toFixed(1)} γ:${event.gamma?.toFixed(1)} awake:${awake}`;
             if (event.beta === null || event.gamma === null) return;
             if (lastBeta === null) {
                 lastBeta = event.beta;
