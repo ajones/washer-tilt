@@ -73,12 +73,62 @@
             width: 140px;
             accent-color: #aaa;
         }
+
+        #voice-btn {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: none;
+            border: 1px solid #333;
+            color: #555;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 3px 7px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        #voice-panel {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: #111;
+            overflow-y: auto;
+            z-index: 10;
+            padding: 16px;
+        }
+
+        #voice-panel.open { display: block; }
+
+        #voice-panel h2 {
+            color: #aaa;
+            font-family: monospace;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .voice-item {
+            padding: 12px 8px;
+            border-bottom: 1px solid #222;
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 13px;
+            color: #888;
+        }
+
+        .voice-item.selected { color: #fff; }
+        .voice-item .lang { color: #444; font-size: 11px; margin-top: 2px; }
     </style>
 </head>
 <body>
     <div class="eye" id="leftEye"><div class="pupil" id="leftPupil"></div></div>
     <div class="eye" id="rightEye"><div class="pupil" id="rightPupil"></div></div>
     <div id="start">tap to start</div>
+    <button id="voice-btn">voice</button>
+    <div id="voice-panel">
+        <h2>choose a voice</h2>
+        <div id="voice-list"></div>
+    </div>
     <div id="debug" style="position:fixed;bottom:10px;left:10px;color:#fff;font-family:monospace;font-size:13px;pointer-events:none;"></div>
     <div id="build" style="position:fixed;top:10px;right:10px;color:#333;font-family:monospace;font-size:12px;pointer-events:none;"></div>
     <div id="threshold-ui">
@@ -98,6 +148,40 @@
         let lookTimer = null;
         let lastBeta = null;
         let lastGamma = null;
+
+        // Voice selection
+        let selectedVoice = null;
+        const voicePanel = document.getElementById('voice-panel');
+        const voiceList = document.getElementById('voice-list');
+
+        function buildVoiceList() {
+            const voices = speechSynthesis.getVoices();
+            if (!voices.length) return;
+            voiceList.innerHTML = '';
+            voices.forEach((v, i) => {
+                const el = document.createElement('div');
+                el.className = 'voice-item' + (v === selectedVoice ? ' selected' : '');
+                el.innerHTML = `${v.name}<div class="lang">${v.lang}</div>`;
+                el.addEventListener('click', () => {
+                    selectedVoice = v;
+                    voicePanel.classList.remove('open');
+                    document.querySelectorAll('.voice-item').forEach(e => e.classList.remove('selected'));
+                    el.classList.add('selected');
+                    const preview = new SpeechSynthesisUtterance(pickNagLine());
+                    preview.voice = v;
+                    speechSynthesis.speak(preview);
+                });
+                voiceList.appendChild(el);
+            });
+        }
+
+        speechSynthesis.addEventListener('voiceschanged', buildVoiceList);
+        buildVoiceList();
+
+        document.getElementById('voice-btn').addEventListener('click', () => {
+            buildVoiceList();
+            voicePanel.classList.toggle('open');
+        });
 
         let threshold = 3;
 
@@ -140,12 +224,44 @@
             }, 400 + Math.random() * 1200);
         }
 
+        const nagLines = [
+            "Were you born in a field or just raised by wolves?",
+            "Close the door, I'm not paying to air-condition the entire neighborhood.",
+            "It's a door, not a suggestion.",
+            "If I wanted to live outside, I'd be in a tent.",
+            "Unless you're waiting for a parade to march through, shut it.",
+            "The hinge isn't just for decoration.",
+            "I didn't realize we were hosting a gala for all the local flies.",
+            "Finish the job; latch the portal.",
+            "My electric bill is crying, and so am I.",
+            "Close it before the outside realizes how much better it is in here.",
+            "Were you born in a barn or just allergic to hinges?",
+            "Close it before the mosquitoes start claiming residency.",
+            "I'm not subsidizing the neighborhood's heating bill.",
+            "It's a door, not a portal to your personal fan club.",
+            "Unless you're a draft, I don't want you coming through that gap.",
+            "Did the door personally offend you, or can you touch it?",
+            "My privacy isn't a public exhibit; shut the gate.",
+            "If I wanted a breeze, I'd stand in front of a fan.",
+            "Put the closed back in enclosed space.",
+            "Your entry was a 10, but your exit is a please shut the door.",
+        ];
+        let lastNagIndex = -1;
+
+        function pickNagLine() {
+            let i;
+            do { i = Math.floor(Math.random() * nagLines.length); } while (i === lastNagIndex);
+            lastNagIndex = i;
+            return nagLines[i];
+        }
+
         let nagTimer = null;
 
         function startNagging() {
             if (nagTimer) return;
             nagTimer = setInterval(() => {
-                const u = new SpeechSynthesisUtterance('close me');
+                const u = new SpeechSynthesisUtterance(pickNagLine());
+                if (selectedVoice) u.voice = selectedVoice;
                 speechSynthesis.speak(u);
             }, 20000);
         }
@@ -243,7 +359,7 @@
 
         // Fullscreen on tap anywhere outside the controls
         document.addEventListener('click', (e) => {
-            if (!document.fullscreenElement && !e.target.closest('#threshold-ui')) {
+            if (!document.fullscreenElement && !e.target.closest('#threshold-ui, #voice-btn, #voice-panel')) {
                 document.documentElement.requestFullscreen?.().catch(() => {});
             }
         });
