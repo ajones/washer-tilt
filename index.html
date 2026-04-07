@@ -26,6 +26,7 @@
             transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .eye.open { transform: scaleY(1); }
+        .eye.open.unhappy { transform: scaleY(0.35); background: #ffcccc; }
 
         .pupil {
             width: 44px;
@@ -64,10 +65,16 @@
         const rightPupil = document.getElementById('rightPupil');
 
         let awake = false;
+        let happy = true;
         let sleepTimer = null;
         let lookTimer = null;
         let lastBeta = null;
         let lastGamma = null;
+
+        function isVertical(beta) {
+            // beta ~90 = upright portrait; allow ±20° tolerance
+            return Math.abs(Math.abs(beta) - 90) < 20;
+        }
 
         function setPupils(x, y) {
             const t = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
@@ -78,7 +85,7 @@
         function scheduleLook() {
             clearTimeout(lookTimer);
             lookTimer = setTimeout(() => {
-                if (!awake) return;
+                if (!awake || !happy) return;
                 const max = 22;
                 setPupils(
                     (Math.random() * 2 - 1) * max,
@@ -88,14 +95,38 @@
             }, 400 + Math.random() * 1200);
         }
 
-        function wakeUp() {
+        function setMood(vertical) {
+            if (vertical === happy) return;
+            happy = vertical;
+            if (happy) {
+                leftEye.classList.remove('unhappy');
+                rightEye.classList.remove('unhappy');
+                scheduleLook();
+            } else {
+                clearTimeout(lookTimer);
+                lookTimer = null;
+                leftEye.classList.add('unhappy');
+                rightEye.classList.add('unhappy');
+                setPupils(0, 20); // look down
+            }
+        }
+
+        function wakeUp(beta) {
             clearTimeout(sleepTimer);
             if (!awake) {
                 awake = true;
-                setPupils(0, 0);
+                happy = isVertical(beta);
+                setPupils(0, happy ? 0 : 20);
                 leftEye.classList.add('open');
                 rightEye.classList.add('open');
-                scheduleLook();
+                if (happy) {
+                    leftEye.classList.remove('unhappy');
+                    rightEye.classList.remove('unhappy');
+                    scheduleLook();
+                } else {
+                    leftEye.classList.add('unhappy');
+                    rightEye.classList.add('unhappy');
+                }
             }
             sleepTimer = setTimeout(sleep, 1000 + Math.random() * 9000);
         }
@@ -103,9 +134,10 @@
         function sleep() {
             awake = false;
             clearTimeout(lookTimer);
+            lookTimer = null;
             setPupils(0, 0);
-            leftEye.classList.remove('open');
-            rightEye.classList.remove('open');
+            leftEye.classList.remove('open', 'unhappy');
+            rightEye.classList.remove('open', 'unhappy');
         }
 
         function handleOrientation(event) {
@@ -119,7 +151,8 @@
             lastBeta = event.beta;
             lastGamma = event.gamma;
 
-            if (db > 1 || dg > 1) wakeUp();
+            if (db > 1 || dg > 1) wakeUp(event.beta);
+            if (awake) setMood(isVertical(event.beta));
         }
 
         document.getElementById('start').addEventListener('click', async () => {
