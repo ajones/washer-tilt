@@ -12,12 +12,12 @@
             align-items: center;
             height: 100vh;
             overflow: hidden;
-            gap: 50px;
+            gap: 4vw;
         }
 
         .eye {
-            width: 100px;
-            height: 100px;
+            width: 48vw;
+            height: 48vw;
             background: white;
             border-radius: 50%;
             position: relative;
@@ -29,8 +29,8 @@
         .eye.open.unhappy { transform: scaleY(0.35); background: #ffcccc; }
 
         .pupil {
-            width: 44px;
-            height: 44px;
+            width: 44%;
+            height: 44%;
             background: #111;
             border-radius: 50%;
             position: absolute;
@@ -83,11 +83,16 @@
             rightPupil.style.transform = t;
         }
 
+        function pupilMax() {
+            // eye radius minus pupil radius (both in px at runtime)
+            return leftEye.offsetWidth * 0.5 - leftEye.offsetWidth * 0.22;
+        }
+
         function scheduleLook() {
             clearTimeout(lookTimer);
             lookTimer = setTimeout(() => {
                 if (!awake || !happy) return;
-                const max = 22;
+                const max = pupilMax();
                 setPupils(
                     (Math.random() * 2 - 1) * max,
                     (Math.random() * 2 - 1) * max
@@ -108,7 +113,7 @@
                 lookTimer = null;
                 leftEye.classList.add('unhappy');
                 rightEye.classList.add('unhappy');
-                setPupils(0, 20); // look down
+                setPupils(0, pupilMax()); // look down
             }
         }
 
@@ -117,7 +122,7 @@
             if (!awake) {
                 awake = true;
                 happy = isVertical(beta);
-                setPupils(0, happy ? 0 : 20);
+                setPupils(0, happy ? 0 : pupilMax());
                 leftEye.classList.add('open');
                 rightEye.classList.add('open');
                 if (happy) {
