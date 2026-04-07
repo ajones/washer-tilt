@@ -25,7 +25,27 @@
             transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .eye.open { transform: scaleY(1); }
-        .eye.open.unhappy { transform: scaleY(0.35); background: #ffcccc; }
+        .eye.open.unhappy { transform: scaleY(1); }
+
+        /* Concerned brow: diagonal black band across the inner-top of each eye */
+        .eye.open.unhappy::before {
+            content: '';
+            position: absolute;
+            background: black;
+            width: 100%;
+            height: 45%;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        #leftEye.open.unhappy::before {
+            transform-origin: 0% 0%;
+            transform: rotate(-22deg);
+        }
+        #rightEye.open.unhappy::before {
+            transform-origin: 100% 0%;
+            transform: rotate(22deg);
+        }
 
         .pupil {
             width: 44%;
@@ -290,7 +310,7 @@
                 lookTimer = null;
                 leftEye.classList.add('unhappy');
                 rightEye.classList.add('unhappy');
-                setPupils(0, pupilMax());
+                setPupils(0, -pupilMax() * 0.5); // look up toward brow
                 startNagging();
             }
         }
@@ -300,7 +320,7 @@
             if (!awake) {
                 awake = true;
                 happy = isVertical(beta);
-                setPupils(0, happy ? 0 : pupilMax());
+                setPupils(0, happy ? 0 : -pupilMax() * 0.5);
                 leftEye.classList.add('open');
                 rightEye.classList.add('open');
                 if (happy) {
