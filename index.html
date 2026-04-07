@@ -21,7 +21,7 @@
             border-radius: 50%;
             position: relative;
             overflow: hidden;
-            transform: scaleY(0.05);
+            transform: scaleY(0);
             transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .eye.open { transform: scaleY(1); }
@@ -72,8 +72,8 @@
         let lastGamma = null;
 
         function isVertical(beta) {
-            // beta ~90 = upright portrait; allow ±20° tolerance
-            return Math.abs(Math.abs(beta) - 90) < 20;
+            // beta ~90 = upright portrait; allow ±15° tolerance
+            return Math.abs(Math.abs(beta) - 90) < 15;
         }
 
         function setPupils(x, y) {
