@@ -263,6 +263,15 @@
 
         const threshold = 1.5;
 
+        function deltaAngle(beta) {
+            return Math.abs(((beta - 90 + 540) % 360) - 180);
+        }
+
+        function isFullyOpen(beta) {
+            // Screen facing ground = door all the way open, delta ~90°
+            return Math.abs(deltaAngle(beta) - 90) <= 10;
+        }
+
         function isVertical(beta) {
             // Angular distance from 90° (upright), accounting for 360° wrap
             const diff = ((beta - 90 + 540) % 360) - 180;
@@ -353,9 +362,7 @@
 
         function startNagging() {
             if (nagTimer) return;
-            nagTimer = setInterval(() => {
-                speak(pickNagLine());
-            }, 20000);
+            nagTimer = setInterval(() => speak(pickNagLine()), 20000);
         }
 
         function stopNagging() {
@@ -364,21 +371,27 @@
             speechSynthesis.cancel();
         }
 
+        function updateNagging(beta) {
+            if (awake && !happy && !isFullyOpen(beta)) {
+                startNagging();
+            } else {
+                stopNagging();
+            }
+        }
+
         function setMood(vertical) {
             if (vertical === happy) return;
             happy = vertical;
             if (happy) {
                 leftEye.classList.remove('unhappy');
                 rightEye.classList.remove('unhappy');
-                stopNagging();
                 scheduleLook();
             } else {
                 clearTimeout(lookTimer);
                 lookTimer = null;
                 leftEye.classList.add('unhappy');
                 rightEye.classList.add('unhappy');
-                setPupils(0, -pupilMax() * 0.5); // look up toward brow
-                startNagging();
+                setPupils(0, -pupilMax() * 0.5);
             }
         }
 
@@ -397,7 +410,6 @@
                 } else {
                     leftEye.classList.add('unhappy');
                     rightEye.classList.add('unhappy');
-                    startNagging();
                 }
             }
             sleepTimer = setTimeout(sleep, 1000 + Math.random() * 9000);
@@ -411,7 +423,7 @@
             setPupils(0, 0);
             leftEye.classList.remove('open', 'unhappy');
             rightEye.classList.remove('open', 'unhappy');
-            stopNagging();
+            updateNagging(lastBeta ?? 90);
         }
 
         function handleOrientation(event) {
@@ -427,7 +439,10 @@
             lastGamma = event.gamma;
 
             if (db > 0.5 || dg > 0.5) wakeUp(event.beta);
-            if (awake) setMood(isVertical(event.beta));
+            if (awake) {
+                setMood(isVertical(event.beta));
+                updateNagging(event.beta);
+            }
         }
 
         function startListening() {
