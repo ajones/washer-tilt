@@ -109,7 +109,9 @@
         });
 
         function isVertical(beta) {
-            return Math.abs(Math.abs(beta) - 90) < threshold;
+            // Angular distance from 90° (upright), accounting for 360° wrap
+            const diff = ((beta - 90 + 540) % 360) - 180;
+            return Math.abs(diff) < threshold;
         }
 
         function setPupils(x, y) {
@@ -186,7 +188,10 @@
 
         function handleOrientation(event) {
             eventCount++;
-            debug.textContent = `events:${eventCount} β:${event.beta?.toFixed(1)} γ:${event.gamma?.toFixed(1)} awake:${awake}`;
+            const fromVertical = event.beta != null
+                ? Math.abs(((event.beta - 90 + 540) % 360) - 180).toFixed(1)
+                : '?';
+            debug.textContent = `β:${event.beta?.toFixed(1)} γ:${event.gamma?.toFixed(1)} Δvert:${fromVertical}° awake:${awake}`;
             if (event.beta === null || event.gamma === null) return;
             if (lastBeta === null) {
                 lastBeta = event.beta;
