@@ -157,6 +157,9 @@
         function buildVoiceList() {
             const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
             if (!voices.length) return;
+            if (!selectedVoice) {
+                selectedVoice = voices.find(v => v.name === 'Google UK English Female') ?? null;
+            }
             voiceList.innerHTML = '';
             voices.forEach((v, i) => {
                 const el = document.createElement('div');
@@ -169,6 +172,7 @@
                     el.classList.add('selected');
                     const preview = new SpeechSynthesisUtterance(pickNagLine());
                     preview.voice = v;
+                    preview.rate = 0.9;
                     speechSynthesis.speak(preview);
                 });
                 voiceList.appendChild(el);
@@ -262,6 +266,7 @@
             nagTimer = setInterval(() => {
                 const u = new SpeechSynthesisUtterance(pickNagLine());
                 if (selectedVoice) u.voice = selectedVoice;
+                u.rate = 0.9;
                 speechSynthesis.speak(u);
             }, 20000);
         }
