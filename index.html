@@ -138,6 +138,26 @@
 
         .voice-item.selected { color: #fff; }
         .voice-item .lang { color: #444; font-size: 11px; margin-top: 2px; }
+        .voice-item .network { color: #5a5; font-size: 10px; margin-left: 6px; }
+
+        #voice-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 12px 0 16px;
+            border-bottom: 1px solid #222;
+            margin-bottom: 4px;
+        }
+        #voice-controls label {
+            color: #888;
+            font-family: monospace;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #voice-controls input[type=range] { flex: 1; accent-color: #aaa; }
+        #voice-controls span { min-width: 28px; }
     </style>
 </head>
 <body>
@@ -147,6 +167,10 @@
     <button id="voice-btn">voice</button>
     <div id="voice-panel">
         <h2>choose a voice</h2>
+        <div id="voice-controls">
+            <label>rate <span id="rate-val">0.9</span><input id="rate-slider" type="range" min="0.5" max="1.5" step="0.05" value="0.9"></label>
+            <label>pitch <span id="pitch-val">1.0</span><input id="pitch-slider" type="range" min="0.5" max="2" step="0.05" value="1.0"></label>
+        </div>
         <div id="voice-list"></div>
     </div>
     <div id="debug" style="position:fixed;bottom:10px;left:10px;color:#fff;font-family:monospace;font-size:13px;pointer-events:none;"></div>
@@ -171,8 +195,32 @@
 
         // Voice selection
         let selectedVoice = null;
+        let voiceRate = 0.9;
+        let voicePitch = 1.0;
         const voicePanel = document.getElementById('voice-panel');
         const voiceList = document.getElementById('voice-list');
+
+        const rateSlider = document.getElementById('rate-slider');
+        const rateVal = document.getElementById('rate-val');
+        const pitchSlider = document.getElementById('pitch-slider');
+        const pitchVal = document.getElementById('pitch-val');
+
+        rateSlider.addEventListener('input', () => {
+            voiceRate = Number(rateSlider.value);
+            rateVal.textContent = voiceRate.toFixed(2);
+        });
+        pitchSlider.addEventListener('input', () => {
+            voicePitch = Number(pitchSlider.value);
+            pitchVal.textContent = voicePitch.toFixed(2);
+        });
+
+        function makeUtterance(text) {
+            const u = new SpeechSynthesisUtterance(text);
+            if (selectedVoice) u.voice = selectedVoice;
+            u.rate = voiceRate;
+            u.pitch = voicePitch;
+            return u;
+        }
 
         function buildVoiceList() {
             const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
@@ -181,19 +229,17 @@
                 selectedVoice = voices.find(v => v.name === 'Google UK English Female') ?? null;
             }
             voiceList.innerHTML = '';
-            voices.forEach((v, i) => {
+            voices.forEach(v => {
                 const el = document.createElement('div');
                 el.className = 'voice-item' + (v === selectedVoice ? ' selected' : '');
-                el.innerHTML = `${v.name}<div class="lang">${v.lang}</div>`;
+                const network = !v.localService ? '<span class="network">network</span>' : '';
+                el.innerHTML = `${v.name}${network}<div class="lang">${v.lang}</div>`;
                 el.addEventListener('click', () => {
                     selectedVoice = v;
                     voicePanel.classList.remove('open');
                     document.querySelectorAll('.voice-item').forEach(e => e.classList.remove('selected'));
                     el.classList.add('selected');
-                    const preview = new SpeechSynthesisUtterance(pickNagLine());
-                    preview.voice = v;
-                    preview.rate = 0.9;
-                    speechSynthesis.speak(preview);
+                    speechSynthesis.speak(makeUtterance(pickNagLine()));
                 });
                 voiceList.appendChild(el);
             });
@@ -284,10 +330,7 @@
         function startNagging() {
             if (nagTimer) return;
             nagTimer = setInterval(() => {
-                const u = new SpeechSynthesisUtterance(pickNagLine());
-                if (selectedVoice) u.voice = selectedVoice;
-                u.rate = 0.9;
-                speechSynthesis.speak(u);
+                speechSynthesis.speak(makeUtterance(pickNagLine()));
             }, 20000);
         }
 
