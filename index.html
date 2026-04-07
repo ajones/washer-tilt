@@ -155,7 +155,7 @@
         const voiceList = document.getElementById('voice-list');
 
         function buildVoiceList() {
-            const voices = speechSynthesis.getVoices();
+            const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
             if (!voices.length) return;
             voiceList.innerHTML = '';
             voices.forEach((v, i) => {
