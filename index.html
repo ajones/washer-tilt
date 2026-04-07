@@ -218,6 +218,27 @@
             .then(d => { document.getElementById('build').textContent = 'build: ' + d.sha.slice(0, 7); })
             .catch(() => {});
 
+        // Fullscreen on tap anywhere outside the controls
+        document.addEventListener('click', (e) => {
+            if (!document.fullscreenElement && !e.target.closest('#threshold-ui')) {
+                document.documentElement.requestFullscreen?.().catch(() => {});
+            }
+        });
+
+        // Burn-in prevention: drift static overlays by a few px every 30s
+        const burnInEls = [
+            document.getElementById('debug'),
+            document.getElementById('build'),
+            document.getElementById('threshold-ui'),
+        ];
+        setInterval(() => {
+            burnInEls.forEach(el => {
+                const x = (Math.random() * 6 - 3).toFixed(1);
+                const y = (Math.random() * 6 - 3).toFixed(1);
+                el.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        }, 30000);
+
         // iOS 13+ requires explicit permission via user gesture
         if (typeof DeviceOrientationEvent.requestPermission === 'function') {
             document.getElementById('start').addEventListener('click', async () => {
