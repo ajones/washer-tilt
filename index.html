@@ -50,6 +50,30 @@
             font-size: 18px;
             cursor: pointer;
         }
+
+        #threshold-ui {
+            position: fixed;
+            bottom: 24px;
+            left: 0;
+            right: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        #threshold-label {
+            color: #aaa;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        #threshold-slider {
+            pointer-events: all;
+            width: 60%;
+            accent-color: #aaa;
+        }
     </style>
 </head>
 <body>
@@ -57,6 +81,10 @@
     <div class="eye" id="rightEye"><div class="pupil" id="rightPupil"></div></div>
     <div id="start">tap to start</div>
     <div id="debug" style="position:fixed;bottom:10px;left:10px;color:#fff;font-family:monospace;font-size:13px;pointer-events:none;"></div>
+    <div id="threshold-ui">
+        <div id="threshold-label">±15°</div>
+        <input id="threshold-slider" type="range" min="1" max="45" value="15">
+    </div>
 
     <script>
         const leftEye = document.getElementById('leftEye');
@@ -71,9 +99,17 @@
         let lastBeta = null;
         let lastGamma = null;
 
+        let threshold = 15;
+
+        const thresholdSlider = document.getElementById('threshold-slider');
+        const thresholdLabel = document.getElementById('threshold-label');
+        thresholdSlider.addEventListener('input', () => {
+            threshold = Number(thresholdSlider.value);
+            thresholdLabel.textContent = `±${threshold}°`;
+        });
+
         function isVertical(beta) {
-            // beta ~90 = upright portrait; allow ±15° tolerance
-            return Math.abs(Math.abs(beta) - 90) < 15;
+            return Math.abs(Math.abs(beta) - 90) < threshold;
         }
 
         function setPupils(x, y) {
