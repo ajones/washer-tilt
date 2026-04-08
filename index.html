@@ -179,7 +179,7 @@
 
         // Voice selection — store by name so the reference survives voiceschanged
         let selectedVoiceName = 'Google UK English Female';
-        let voiceRate = 0.9;
+        let voiceRate = 0.85;
         let voicePitch = 1.0;
         const voicePanel = document.getElementById('voice-panel');
         const voiceList = document.getElementById('voice-list');
@@ -261,7 +261,7 @@
             voicePanel.classList.toggle('open');
         });
 
-        const threshold = 1.5;
+        const threshold = 1.75;
 
         function deltaAngle(beta) {
             return Math.abs(((beta - 90 + 540) % 360) - 180);
