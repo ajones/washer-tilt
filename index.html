@@ -176,6 +176,7 @@
         let lookTimer = null;
         let lastBeta = null;
         let lastGamma = null;
+        let anchorBeta = null;
 
         // Voice selection — store by name so the reference survives voiceschanged
         let selectedVoiceName = 'Google UK English Female';
@@ -273,8 +274,8 @@
         }
 
         function isVertical(beta) {
-            // Angular distance from 90° (upright), accounting for 360° wrap
-            const diff = ((beta - 90 + 540) % 360) - 180;
+            if (anchorBeta === null) return true;
+            const diff = ((beta - anchorBeta + 540) % 360) - 180;
             return Math.abs(diff) < threshold;
         }
 
@@ -487,6 +488,7 @@
             if (lastBeta === null) {
                 lastBeta = event.beta;
                 lastGamma = event.gamma;
+                anchorBeta = event.beta;
                 return;
             }
             const db = Math.abs(event.beta - lastBeta);
