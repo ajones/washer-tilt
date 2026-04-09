@@ -501,8 +501,9 @@
 
             const vertical = isVertical(event.beta);
             const moved = db > 0.5 || dg > 0.5;
+            const strongMotion = db > 2.5 || dg > 2.5;
 
-            if (moved || (!awake && !vertical)) wakeUp(event.beta);
+            if ((!awake && !vertical) || (awake && moved) || (!awake && vertical && strongMotion)) wakeUp(event.beta);
 
             if (awake) {
                 setMood(vertical);
