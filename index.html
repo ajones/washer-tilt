@@ -177,6 +177,7 @@
         let lastBeta = null;
         let lastGamma = null;
         let anchorBeta = null;
+        let closedSince = null;
 
         // Voice selection — store by name so the reference survives voiceschanged
         let selectedVoiceName = 'Google UK English Female';
@@ -469,14 +470,16 @@
                     rightEye.classList.add('unhappy');
                 }
             }
-            sleepTimer = setTimeout(sleep, 1000 + Math.random() * 9000);
         }
 
         function sleep() {
             if (!happy) return;
             awake = false;
+            closedSince = null;
             clearTimeout(lookTimer);
             lookTimer = null;
+            clearTimeout(sleepTimer);
+            sleepTimer = null;
             setPupils(0, 0);
             leftEye.classList.remove('open', 'unhappy');
             rightEye.classList.remove('open', 'unhappy');
@@ -496,10 +499,26 @@
             lastBeta = event.beta;
             lastGamma = event.gamma;
 
-            if (db > 0.5 || dg > 0.5) wakeUp(event.beta);
+            const vertical = isVertical(event.beta);
+            const moved = db > 0.5 || dg > 0.5;
+
+            if (moved || (!awake && !vertical)) wakeUp(event.beta);
+
             if (awake) {
-                setMood(isVertical(event.beta));
+                setMood(vertical);
                 updateNagging(event.beta);
+
+                if (vertical) {
+                    if (closedSince === null) closedSince = Date.now();
+                    clearTimeout(sleepTimer);
+                    const stableClosedMs = Date.now() - closedSince;
+                    const remainingMs = Math.max(0, 4000 - stableClosedMs);
+                    sleepTimer = setTimeout(sleep, remainingMs);
+                } else {
+                    closedSince = null;
+                    clearTimeout(sleepTimer);
+                    sleepTimer = null;
+                }
             }
         }
 
