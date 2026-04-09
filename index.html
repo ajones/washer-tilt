@@ -178,6 +178,7 @@
         let lastGamma = null;
         let anchorBeta = null;
         let closedSince = null;
+        let filteredMotion = 0;
 
         // Voice selection — store by name so the reference survives voiceschanged
         let selectedVoiceName = 'Google UK English Female';
@@ -500,8 +501,10 @@
             lastGamma = event.gamma;
 
             const vertical = isVertical(event.beta);
-            const moved = db > 0.5 || dg > 0.5;
-            const strongMotion = db > 2.5 || dg > 2.5;
+            const rawMotion = Math.max(db, dg);
+            filteredMotion = Math.max(0, filteredMotion * 0.82 + rawMotion - 0.18);
+            const moved = filteredMotion > 0.6;
+            const strongMotion = filteredMotion > 2.2;
 
             if ((!awake && !vertical) || (awake && moved) || (!awake && vertical && strongMotion)) wakeUp(event.beta);
 
