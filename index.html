@@ -178,7 +178,7 @@
         let lastGamma = null;
         let anchorBeta = null;
         let closedSince = null;
-        let filteredMotion = 0;
+        let motionSamples = [];
 
         // Voice selection — store by name so the reference survives voiceschanged
         let selectedVoiceName = 'Google UK English Female';
@@ -502,9 +502,11 @@
 
             const vertical = isVertical(event.beta);
             const rawMotion = Math.max(db, dg);
-            filteredMotion = Math.max(0, filteredMotion * 0.82 + rawMotion - 0.18);
-            const moved = filteredMotion > 0.6;
-            const strongMotion = filteredMotion > 2.2;
+            motionSamples.push(rawMotion);
+            if (motionSamples.length > 10) motionSamples.shift();
+            const avgMotion = motionSamples.reduce((sum, sample) => sum + sample, 0) / motionSamples.length;
+            const moved = avgMotion > 0.6;
+            const strongMotion = avgMotion > 2.2;
 
             if ((!awake && !vertical) || (awake && moved) || (!awake && vertical && strongMotion)) wakeUp(event.beta);
 
