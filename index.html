@@ -179,6 +179,7 @@
         let anchorBeta = null;
         let closedSince = null;
         let motionSamples = [];
+        let calibrationSamples = [];
 
         // Voice selection — store by name so the reference survives voiceschanged
         let selectedVoiceName = 'Google UK English Female';
@@ -275,10 +276,36 @@
             return Math.abs(deltaAngle(beta) - 90) <= 10;
         }
 
+        function angleDiff(a, b) {
+            return ((a - b + 540) % 360) - 180;
+        }
+
         function isVertical(beta) {
-            if (anchorBeta === null) return true;
-            const diff = ((beta - anchorBeta + 540) % 360) - 180;
-            return Math.abs(diff) < threshold;
+            if (anchorBeta === null) return false;
+            return Math.abs(angleDiff(beta, anchorBeta)) < threshold;
+        }
+
+        function updateCalibration(beta, gamma, rawMotion) {
+            if (anchorBeta !== null) return;
+            if (isFullyOpen(beta)) {
+                calibrationSamples = [];
+                return;
+            }
+            if (Math.abs(gamma) > 12) {
+                calibrationSamples = [];
+                return;
+            }
+            if (rawMotion > 1.2) {
+                calibrationSamples = [];
+                return;
+            }
+            calibrationSamples.push(beta);
+            if (calibrationSamples.length > 10) calibrationSamples.shift();
+            if (calibrationSamples.length === 10) {
+                const avgBeta = calibrationSamples.reduce((sum, sample) => sum + sample, 0) / calibrationSamples.length;
+                const stable = calibrationSamples.every(sample => Math.abs(angleDiff(sample, avgBeta)) < threshold);
+                if (stable) anchorBeta = avgBeta;
+            }
         }
 
         function setPupils(x, y) {
@@ -492,7 +519,6 @@
             if (lastBeta === null) {
                 lastBeta = event.beta;
                 lastGamma = event.gamma;
-                anchorBeta = event.beta;
                 return;
             }
             const db = Math.abs(event.beta - lastBeta);
@@ -500,8 +526,9 @@
             lastBeta = event.beta;
             lastGamma = event.gamma;
 
-            const vertical = isVertical(event.beta);
             const rawMotion = Math.max(db, dg);
+            updateCalibration(event.beta, event.gamma, rawMotion);
+            const vertical = isVertical(event.beta);
             motionSamples.push(rawMotion);
             if (motionSamples.length > 10) motionSamples.shift();
             const avgMotion = motionSamples.reduce((sum, sample) => sum + sample, 0) / motionSamples.length;
