@@ -539,6 +539,8 @@
                 // plausible closed position (not flat, not wildly tilted sideways).
                 if (!isFullyOpen(event.beta) && Math.abs(event.gamma) <= 15) {
                     anchorBeta = event.beta;
+                    const deltaEl = document.getElementById('delta-display');
+                    if (deltaEl) deltaEl.textContent = '0.0°';
                 }
                 return;
             }
