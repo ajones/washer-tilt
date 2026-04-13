@@ -146,6 +146,21 @@
         }
         #voice-controls input[type=range] { flex: 1; accent-color: #aaa; }
         #voice-controls span { min-width: 28px; }
+
+        #delta-display {
+            position: fixed;
+            bottom: 24px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: white;
+            font-family: monospace;
+            font-size: 88px;
+            font-weight: bold;
+            pointer-events: none;
+            opacity: 0.75;
+            letter-spacing: -2px;
+        }
     </style>
 </head>
 <body>
@@ -163,6 +178,7 @@
         <div id="voice-list"></div>
     </div>
     <div id="build" style="position:fixed;top:10px;right:10px;color:#333;font-family:monospace;font-size:12px;pointer-events:none;"></div>
+    <div id="delta-display">--</div>
 
     <script>
         const leftEye = document.getElementById('leftEye');
@@ -519,6 +535,11 @@
             if (lastBeta === null) {
                 lastBeta = event.beta;
                 lastGamma = event.gamma;
+                // Capture anchor immediately from the first reading if the phone is in a
+                // plausible closed position (not flat, not wildly tilted sideways).
+                if (!isFullyOpen(event.beta) && Math.abs(event.gamma) <= 15) {
+                    anchorBeta = event.beta;
+                }
                 return;
             }
             const db = Math.abs(event.beta - lastBeta);
@@ -528,6 +549,15 @@
 
             const rawMotion = Math.max(db, dg);
             updateCalibration(event.beta, event.gamma, rawMotion);
+
+            const deltaEl = document.getElementById('delta-display');
+            if (deltaEl) {
+                if (anchorBeta !== null) {
+                    deltaEl.textContent = Math.abs(angleDiff(event.beta, anchorBeta)).toFixed(1) + '°';
+                } else {
+                    deltaEl.textContent = '--';
+                }
+            }
             const vertical = isVertical(event.beta);
             motionSamples.push(rawMotion);
             if (motionSamples.length > 10) motionSamples.shift();
