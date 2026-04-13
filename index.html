@@ -535,13 +535,9 @@
             if (lastBeta === null) {
                 lastBeta = event.beta;
                 lastGamma = event.gamma;
-                // Capture anchor immediately from the first reading if the phone is in a
-                // plausible closed position (not flat, not wildly tilted sideways).
-                if (!isFullyOpen(event.beta) && Math.abs(event.gamma) <= 15) {
-                    anchorBeta = event.beta;
-                    const deltaEl = document.getElementById('delta-display');
-                    if (deltaEl) deltaEl.textContent = '0.0°';
-                }
+                // Capture anchor immediately from whatever angle the phone starts at.
+                anchorBeta = event.beta;
+                document.getElementById('delta-display').textContent = '0.0°';
                 return;
             }
             const db = Math.abs(event.beta - lastBeta);
@@ -550,16 +546,10 @@
             lastGamma = event.gamma;
 
             const rawMotion = Math.max(db, dg);
-            updateCalibration(event.beta, event.gamma, rawMotion);
 
-            const deltaEl = document.getElementById('delta-display');
-            if (deltaEl) {
-                if (anchorBeta !== null) {
-                    deltaEl.textContent = Math.abs(angleDiff(event.beta, anchorBeta)).toFixed(1) + '°';
-                } else {
-                    deltaEl.textContent = '--';
-                }
-            }
+            document.getElementById('delta-display').textContent =
+                Math.abs(angleDiff(event.beta, anchorBeta)).toFixed(1) + '°';
+
             const vertical = isVertical(event.beta);
             motionSamples.push(rawMotion);
             if (motionSamples.length > 10) motionSamples.shift();
