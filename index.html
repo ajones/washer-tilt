@@ -242,11 +242,26 @@
             return hour >= 21 || hour < 7;
         }
 
-        function speak(text) {
+        let pendingSpeech = null;
+
+        function speak(text, queue = false) {
             if (isQuietHours()) return;
-            // cancel + small delay works around Android Chrome ignoring voice in timers
+            if (speechSynthesis.speaking) {
+                if (queue) pendingSpeech = text;
+                return;
+            }
+            pendingSpeech = null;
+            const u = makeUtterance(text);
+            u.addEventListener('end', () => {
+                if (pendingSpeech) {
+                    const next = pendingSpeech;
+                    pendingSpeech = null;
+                    speak(next);
+                }
+            });
+            // cancel + small delay works around Android Chrome voice routing in timers
             speechSynthesis.cancel();
-            setTimeout(() => speechSynthesis.speak(makeUtterance(text)), 50);
+            setTimeout(() => speechSynthesis.speak(u), 50);
         }
 
         function buildVoiceList() {
@@ -470,7 +485,8 @@
         function stopNagging() {
             clearInterval(nagTimer);
             nagTimer = null;
-            speechSynthesis.cancel();
+            pendingSpeech = null;
+            // intentionally not canceling speech — let the current sentence finish
         }
 
         function updateNagging(beta) {
@@ -560,8 +576,10 @@
             if ((!awake && !vertical) || (awake && moved) || (!awake && vertical && strongMotion)) wakeUp(event.beta);
 
             if (awake) {
+                const wasHappy = happy;
                 setMood(vertical);
                 updateNagging(event.beta);
+                if (!wasHappy && happy) speak('Thank you.', true);
 
                 if (vertical) {
                     if (closedSince === null) closedSince = Date.now();
