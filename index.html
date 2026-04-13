@@ -74,16 +74,18 @@
 
         #voice-btn {
             position: fixed;
-            top: 10px;
-            left: 10px;
+            top: 12px;
+            left: 12px;
             background: none;
-            border: 1px solid #333;
-            color: #555;
+            border: 1px solid #444;
+            color: #777;
             font-family: monospace;
-            font-size: 12px;
-            padding: 3px 7px;
+            font-size: 18px;
+            padding: 10px 20px;
             cursor: pointer;
-            border-radius: 3px;
+            border-radius: 6px;
+            min-width: 44px;
+            min-height: 44px;
         }
 
         #voice-panel {
@@ -167,11 +169,12 @@
     <div class="eye" id="leftEye"><div class="pupil" id="leftPupil"></div></div>
     <div class="eye" id="rightEye"><div class="pupil" id="rightPupil"></div></div>
     <div id="start">tap to start</div>
-    <button id="voice-btn">voice</button>
+    <button id="voice-btn">options</button>
     <div id="voice-panel">
         <h2>choose a voice</h2>
         <p id="voice-hint">On Android, install more voices via:<br>Settings → General Management → Language &amp; Input → Text-to-speech → Google Text-to-Speech → Install voice data → English (UK)</p>
         <div id="voice-controls">
+            <label>sensitivity <span id="sensitivity-val">1.8</span><input id="sensitivity-slider" type="range" min="0.5" max="8" step="0.25" value="1.75"></label>
             <label>rate <span id="rate-val">0.9</span><input id="rate-slider" type="range" min="0.5" max="1.5" step="0.05" value="0.9"></label>
             <label>pitch <span id="pitch-val">1.0</span><input id="pitch-slider" type="range" min="0.5" max="2" step="0.05" value="1.0"></label>
         </div>
@@ -204,11 +207,17 @@
         const voicePanel = document.getElementById('voice-panel');
         const voiceList = document.getElementById('voice-list');
 
+        const sensitivitySlider = document.getElementById('sensitivity-slider');
+        const sensitivityVal = document.getElementById('sensitivity-val');
         const rateSlider = document.getElementById('rate-slider');
         const rateVal = document.getElementById('rate-val');
         const pitchSlider = document.getElementById('pitch-slider');
         const pitchVal = document.getElementById('pitch-val');
 
+        sensitivitySlider.addEventListener('input', () => {
+            threshold = Number(sensitivitySlider.value);
+            sensitivityVal.textContent = threshold.toFixed(1);
+        });
         rateSlider.addEventListener('input', () => {
             voiceRate = Number(rateSlider.value);
             rateVal.textContent = voiceRate.toFixed(2);
@@ -296,7 +305,7 @@
             voicePanel.classList.toggle('open');
         });
 
-        const threshold = 1.75;
+        let threshold = 1.75;
 
         function deltaAngle(beta) {
             return Math.abs(((beta - 90 + 540) % 360) - 180);
@@ -549,12 +558,15 @@
         function handleOrientation(event) {
             if (event.beta === null || event.gamma === null) return;
             if (lastBeta === null) {
+                // Skip first event — many devices fire beta=0 as sensor warmup before
+                // real data arrives. Anchor from the second event instead.
                 lastBeta = event.beta;
                 lastGamma = event.gamma;
-                // Capture anchor immediately from whatever angle the phone starts at.
+                return;
+            }
+            if (anchorBeta === null) {
                 anchorBeta = event.beta;
                 document.getElementById('delta-display').textContent = '0.0°';
-                return;
             }
             const db = Math.abs(event.beta - lastBeta);
             const dg = Math.abs(event.gamma - lastGamma);
